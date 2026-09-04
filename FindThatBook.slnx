@@ -4,4 +4,7 @@
     <Project Path="src/FindThatBook.AppHost/FindThatBook.AppHost.csproj" />
     <Project Path="src/FindThatBook.ServiceDefaults/FindThatBook.ServiceDefaults.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FindThatBook.Api.Tests/FindThatBook.Api.Tests.csproj" />
+  </Folder>
 </Solution>

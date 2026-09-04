@@ -1,4 +1,5 @@
 using FindThatBook.Api.Configuration;
+using FindThatBook.Api.Infrastructure;
 using FindThatBook.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,12 @@ builder.Services.AddOptions<SearchOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+// Turns unhandled exceptions into ProblemDetails. AddProblemDetails supplies the writer
+// that GlobalExceptionHandler uses, and also gives non-exception responses (404, 415, ...)
+// a JSON body instead of an empty one.
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 builder.Services.AddControllers();
 
 // Minimal OpenAPI document at /openapi/v1.json (Microsoft.AspNetCore.OpenApi).
@@ -30,8 +37,12 @@ builder.Services.AddOpenApi(options =>
 });
 
 builder.Services.AddScoped<IBookSearchService, BookSearchService>();
+builder.Services.AddTransient<IQueryValidationService, QueryValidationService>();
 
 var app = builder.Build();
+
+// First in the pipeline, so it also catches failures thrown by later middleware.
+app.UseExceptionHandler();
 
 app.MapDefaultEndpoints();
 

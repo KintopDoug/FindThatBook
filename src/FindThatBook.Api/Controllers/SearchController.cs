@@ -26,11 +26,12 @@ public class SearchController(
     [HttpGet]
     [ProducesResponseType<BookSearchResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status504GatewayTimeout)]
     public async Task<ActionResult<BookSearchResponse>> Search([FromQuery] string? query)
     {
-       
-
-        BookSearchResponse response = await bookSearchService.SearchAsync(query);
+        BookSearchResponse response = await bookSearchService.SearchAsync(query ?? string.Empty);
 
         return Ok(response);
     }
