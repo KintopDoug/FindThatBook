@@ -1,4 +1,5 @@
 using FindThatBook.Api.Configuration;
+using FindThatBook.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,8 @@ builder.Services.AddOpenApi(options =>
         return Task.CompletedTask;
     });
 });
+
+builder.Services.AddScoped<IBookSearchService, BookSearchService>();
 
 var app = builder.Build();
 

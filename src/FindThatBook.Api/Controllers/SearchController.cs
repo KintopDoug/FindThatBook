@@ -1,4 +1,6 @@
 using FindThatBook.Api.Configuration;
+using FindThatBook.Api.Models.Response;
+using FindThatBook.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -12,7 +14,8 @@ namespace FindThatBook.Api.Controllers;
 [Route("api/[controller]")]
 public class SearchController(
     ILogger<SearchController> logger,
-    IOptions<SearchOptions> searchOptions) : ControllerBase
+    IOptions<SearchOptions> searchOptions,
+    IBookSearchService bookSearchService) : ControllerBase
 {
     private readonly SearchOptions _searchOptions = searchOptions.Value;
 
@@ -21,35 +24,14 @@ public class SearchController(
     /// </summary>
     /// <param name="query">The raw user query. Title, author, keywords, or any mix of them.</param>
     [HttpGet]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public IActionResult Search([FromQuery] string? query)
+    [ProducesResponseType<BookSearchResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<BookSearchResponse>> Search([FromQuery] string? query)
     {
-        if (string.IsNullOrWhiteSpace(query))
-        {
-            logger.LogInformation("Search rejected: empty query.");
-            return ValidationProblem("Query must not be empty.");
-        }
+       
 
-        // Trim only. Deeper normalization belongs in the search pipeline, not the transport
-        // layer, so the raw query stays available for the LLM extraction step.
-        var trimmed = query.Trim();
+        BookSearchResponse response = await bookSearchService.SearchAsync(query);
 
-        if (trimmed.Length > _searchOptions.MaxQueryLength)
-        {
-            logger.LogInformation(
-                "Search rejected: query length {Length} exceeds {MaxQueryLength}.",
-                trimmed.Length,
-                _searchOptions.MaxQueryLength);
-
-            return ValidationProblem(
-                $"Query must be {_searchOptions.MaxQueryLength} characters or fewer.");
-        }
-
-        logger.LogInformation("Search accepted for query {Query}.", trimmed);
-
-        // TODO: LLM extraction of query -> Open Library retrieval -> ranking. Returning the accepted
-        // query for now so the transport contract can be exercised end to end.
-        return Ok(new { query = trimmed });
+        return Ok(response);
     }
 }

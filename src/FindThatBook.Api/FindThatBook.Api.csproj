@@ -18,9 +18,5 @@
     <ProjectReference Include="..\FindThatBook.ServiceDefaults\FindThatBook.ServiceDefaults.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\DTO\" />
-    <Folder Include="Models\Response\" />
-  </ItemGroup>
 
 </Project>
