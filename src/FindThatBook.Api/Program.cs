@@ -1,6 +1,7 @@
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Infrastructure;
 using FindThatBook.Api.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +23,13 @@ builder.Services.AddOptions<SearchOptions>()
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
+// Bind the "Gemini" section. The API key is intentionally not required: without one the
+// app still runs and query extraction uses the deterministic parser.
+builder.Services.AddOptions<GeminiOptions>()
+    .Bind(builder.Configuration.GetSection(GeminiOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddControllers();
 
 // Minimal OpenAPI document at /openapi/v1.json (Microsoft.AspNetCore.OpenApi).
@@ -38,6 +46,16 @@ builder.Services.AddOpenApi(options =>
 
 builder.Services.AddScoped<IBookSearchService, BookSearchService>();
 builder.Services.AddTransient<IQueryValidationService, QueryValidationService>();
+builder.Services.AddTransient<IFallbackQueryExtractor, FallbackQueryExtractor>();
+builder.Services.AddScoped<IQueryExtractionService, QueryExtractionService>();
+
+// Typed client. AddServiceDefaults already applies the standard resilience handler to every
+// HttpClient, so retries and per-attempt timeouts come along for free.
+builder.Services.AddHttpClient<ILlmQueryExtractor, GeminiQueryExtractor>((provider, client) =>
+{
+    var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 
 var app = builder.Build();
 

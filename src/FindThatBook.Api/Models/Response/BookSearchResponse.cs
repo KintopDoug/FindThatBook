@@ -10,6 +10,20 @@ public sealed class BookSearchResponse
     /// <summary>The normalized query that was actually searched, echoed back for display.</summary>
     public required string Query { get; init; }
 
+    /// <summary>How the query was read: the title, author, and keywords searched on.</summary>
+    public required ExtractedQuery Interpretation { get; init; }
+
+    /// <summary>
+    /// Whether the interpretation came from the language model or the deterministic parser.
+    /// </summary>
+    public required QueryExtractionSource ExtractionSource { get; init; }
+
+    /// <summary>
+    /// Plain-language reason the deterministic parser was used, suitable for display.
+    /// Null when the language model produced the interpretation.
+    /// </summary>
+    public string? FallbackReason { get; init; }
+
     /// <summary>
     /// Candidates in rank order, best first. Empty when the query was understood but
     /// nothing plausible was found, which is a 200 rather than an error.

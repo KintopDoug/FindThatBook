@@ -23,15 +23,19 @@ public class SearchController(
     /// Searches for books matching a messy plain-text query
     /// </summary>
     /// <param name="query">The raw user query. Title, author, keywords, or any mix of them.</param>
+    /// <param name="cancellationToken">Cancellation token, tied to the client connection.</param>
     [HttpGet]
     [ProducesResponseType<BookSearchResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status500InternalServerError)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status504GatewayTimeout)]
-    public async Task<ActionResult<BookSearchResponse>> Search([FromQuery] string? query)
+    public async Task<ActionResult<BookSearchResponse>> Search(
+        [FromQuery] string? query,
+        CancellationToken cancellationToken)
     {
-        BookSearchResponse response = await bookSearchService.SearchAsync(query ?? string.Empty);
+        BookSearchResponse response =
+            await bookSearchService.SearchAsync(query ?? string.Empty, cancellationToken);
 
         return Ok(response);
     }
