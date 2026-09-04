@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FindThatBook.Api/FindThatBook.Api.csproj" />
+    <Project Path="src/FindThatBook.AppHost/FindThatBook.AppHost.csproj" />
+    <Project Path="src/FindThatBook.ServiceDefaults/FindThatBook.ServiceDefaults.csproj" />
+  </Folder>
+</Solution>

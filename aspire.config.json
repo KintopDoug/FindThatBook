@@ -1,0 +1,5 @@
+{
+  "appHost": {
+    "path": "src/FindThatBook.AppHost/FindThatBook.AppHost.csproj"
+  }
+}
