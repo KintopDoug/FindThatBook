@@ -8,15 +8,21 @@ public class BookSearchService : IBookSearchService
     private readonly ILogger _logger;
     private readonly IQueryValidationService _queryValidationService;
     private readonly IQueryExtractionService _queryExtractionService;
+    private readonly IBookRetrievalService _bookRetrievalService;
+    private readonly BookCandidateMapper _bookCandidateMapper;
 
     public BookSearchService(
         ILogger<BookSearchService> logger,
         IQueryValidationService queryValidationService,
-        IQueryExtractionService queryExtractionService)
+        IQueryExtractionService queryExtractionService,
+        IBookRetrievalService bookRetrievalService,
+        BookCandidateMapper bookCandidateMapper)
     {
         _logger = logger;
         _queryValidationService = queryValidationService;
         _queryExtractionService = queryExtractionService;
+        _bookRetrievalService = bookRetrievalService;
+        _bookCandidateMapper = bookCandidateMapper;
     }
 
     public async Task<BookSearchResponse> SearchAsync(string query, CancellationToken cancellationToken = default)
@@ -36,15 +42,25 @@ public class BookSearchService : IBookSearchService
             extraction.Query.Keywords.Count);
 
         //Open Library Retrieval
+        BookRetrievalResult retrieval = await _bookRetrievalService.RetrieveAsync(
+            extraction.Query,
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Retrieved {Count} candidates for {Query} using {Strategy}.",
+            retrieval.Works.Count,
+            normalizedQuery,
+            retrieval.Strategy);
+
         //ranking
 
-        // Returning the interpretation for now so the transport contract can be exercised end to end.
         return new BookSearchResponse
         {
             Query = normalizedQuery,
             Interpretation = extraction.Query,
             ExtractionSource = extraction.Source,
-            FallbackReason = extraction.FallbackReason
+            FallbackReason = extraction.FallbackReason,
+            Results = _bookCandidateMapper.ToCandidates(retrieval)
         };
     }
 }

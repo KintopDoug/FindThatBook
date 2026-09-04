@@ -4,6 +4,7 @@ using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
 using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
+using Polly;
 
 namespace FindThatBook.Api.Services
 {
@@ -99,6 +100,13 @@ namespace FindThatBook.Api.Services
             {
                 // The caller gave up. Let that propagate rather than reporting a model failure.
                 throw;
+            }
+            catch (ExecutionRejectedException exception)
+            {
+                // Resilience pipeline timeout or open circuit. Derives from neither
+                // HttpRequestException nor OperationCanceledException, so it needs naming
+                // explicitly or it escapes the fallback path.
+                throw new LlmExtractionException("Gemini was unreachable or unresponsive.", exception);
             }
             catch (Exception exception) when (exception is HttpRequestException or OperationCanceledException)
             {

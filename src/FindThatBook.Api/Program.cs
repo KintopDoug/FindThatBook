@@ -30,6 +30,11 @@ builder.Services.AddOptions<GeminiOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
+builder.Services.AddOptions<OpenLibraryOptions>()
+    .Bind(builder.Configuration.GetSection(OpenLibraryOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 builder.Services.AddControllers();
 
 // Minimal OpenAPI document at /openapi/v1.json (Microsoft.AspNetCore.OpenApi).
@@ -55,6 +60,18 @@ builder.Services.AddHttpClient<ILlmQueryExtractor, GeminiQueryExtractor>((provid
 {
     var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
     client.BaseAddress = new Uri(options.BaseUrl);
+});
+
+builder.Services.AddScoped<IBookRetrievalService, BookRetrievalService>();
+builder.Services.AddTransient<BookCandidateMapper>();
+
+builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((provider, client) =>
+{
+    var options = provider.GetRequiredService<IOptions<OpenLibraryOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+
+    // Open Library throttles anonymous traffic that does not identify itself.
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
 });
 
 var app = builder.Build();

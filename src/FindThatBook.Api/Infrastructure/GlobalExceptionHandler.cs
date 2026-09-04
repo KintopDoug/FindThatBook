@@ -92,6 +92,13 @@ public sealed class GlobalExceptionHandler(
                 "Invalid query",
                 exception.Message),
 
+            // Open Library failed. Unlike LLM extraction there is no fallback for this: with
+            // no catalogue there are no candidates to return.
+            OpenLibraryException => (
+                StatusCodes.Status502BadGateway,
+                "Book search is unavailable",
+                "The book catalogue could not be reached. Please try again shortly."),
+
             // Open Library (or another downstream call) was reachable but failed.
             HttpRequestException => (
                 StatusCodes.Status502BadGateway,
