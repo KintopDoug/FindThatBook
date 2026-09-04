@@ -1,9 +1,18 @@
+using FindThatBook.Api.Configuration;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Aspire service defaults: service discovery, resilience, health checks, and the
 // OpenTelemetry logger/meter/tracer providers. The OTLP exporter configured here is
 // what forwards ILogger<T> output to the Aspire dashboard's structured logs.
 builder.AddServiceDefaults();
+
+// Bind the "Search" section and fail fast at startup on a bad value rather than on the
+// first request that happens to hit the validation path.
+builder.Services.AddOptions<SearchOptions>()
+    .Bind(builder.Configuration.GetSection(SearchOptions.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
 
 builder.Services.AddControllers();
 
