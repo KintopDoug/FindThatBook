@@ -9,6 +9,7 @@ public class BookSearchService : IBookSearchService
     private readonly IQueryValidationService _queryValidationService;
     private readonly IQueryExtractionService _queryExtractionService;
     private readonly IBookRetrievalService _bookRetrievalService;
+    private readonly IBookRankingService _bookRankingService;
     private readonly BookCandidateMapper _bookCandidateMapper;
 
     public BookSearchService(
@@ -16,12 +17,14 @@ public class BookSearchService : IBookSearchService
         IQueryValidationService queryValidationService,
         IQueryExtractionService queryExtractionService,
         IBookRetrievalService bookRetrievalService,
+        IBookRankingService bookRankingService,
         BookCandidateMapper bookCandidateMapper)
     {
         _logger = logger;
         _queryValidationService = queryValidationService;
         _queryExtractionService = queryExtractionService;
         _bookRetrievalService = bookRetrievalService;
+        _bookRankingService = bookRankingService;
         _bookCandidateMapper = bookCandidateMapper;
     }
 
@@ -53,14 +56,40 @@ public class BookSearchService : IBookSearchService
             retrieval.Strategy);
 
         //ranking
+        // Nothing to order means no ranking ran, so the response reports no ranking source
+        // rather than naming a path that never executed.
+        if (retrieval.Works.Count == 0)
+        {
+            return new BookSearchResponse
+            {
+                Query = normalizedQuery,
+                Interpretation = extraction.Query,
+                ExtractionSource = extraction.Source,
+                ExtractionFallbackReason = extraction.FallbackReason
+            };
+        }
+
+        BookRankingResult ranking = await _bookRankingService.RankAsync(
+            normalizedQuery,
+            extraction.Query,
+            retrieval.Works,
+            cancellationToken);
+
+        _logger.LogInformation(
+            "Ranked {Count} candidates for {Query} via {Source}.",
+            ranking.Ranked.Count,
+            normalizedQuery,
+            ranking.Source);
 
         return new BookSearchResponse
         {
             Query = normalizedQuery,
             Interpretation = extraction.Query,
             ExtractionSource = extraction.Source,
-            FallbackReason = extraction.FallbackReason,
-            Results = _bookCandidateMapper.ToCandidates(retrieval)
+            ExtractionFallbackReason = extraction.FallbackReason,
+            RankingSource = ranking.Source,
+            RankingFallbackReason = ranking.FallbackReason,
+            Results = _bookCandidateMapper.ToCandidates(ranking)
         };
     }
 }

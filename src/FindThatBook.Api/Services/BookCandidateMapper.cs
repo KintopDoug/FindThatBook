@@ -5,26 +5,25 @@ using Microsoft.Extensions.Options;
 namespace FindThatBook.Api.Services
 {
     /// <summary>
-    /// Turns retrieved works into the candidates the API returns.
+    /// Turns ranked works into the candidates the API returns.
     /// </summary>
     /// <remarks>
-    /// The explanations here describe retrieval evidence only: which fields were searched,
-    /// and whether the authors were confirmed against the canonical work record. They
-    /// deliberately do not claim match strength, because nothing has scored these results
-    /// yet -- the order is still Open Library's own relevance. The ranking stage will replace
-    /// these with explanations that reflect scoring.
+    /// Presentation only. The explanation arrives already written by whichever ranker ran, so
+    /// that the text always reflects the evidence that actually decided the ordering rather
+    /// than being reconstructed here from different reasoning.
     /// </remarks>
     public class BookCandidateMapper(IOptions<OpenLibraryOptions> openLibraryOptions)
     {
         private readonly OpenLibraryOptions _options = openLibraryOptions.Value;
 
-        public IReadOnlyList<BookCandidate> ToCandidates(BookRetrievalResult retrieval) =>
-            retrieval.Works
-                .Select(work => ToCandidate(work, retrieval.Strategy))
-                .ToArray();
+        public IReadOnlyList<BookCandidate> ToCandidates(BookRankingResult ranking) =>
+            ranking.Ranked.Select(ToCandidate).ToArray();
 
-        private BookCandidate ToCandidate(OpenLibraryWork work, RetrievalStrategy strategy) =>
-            new()
+        private BookCandidate ToCandidate(RankedWork ranked)
+        {
+            var work = ranked.Work;
+
+            return new BookCandidate
             {
                 Title = string.IsNullOrWhiteSpace(work.Subtitle)
                     ? work.Title
@@ -36,28 +35,8 @@ namespace FindThatBook.Api.Services
                 CoverImageUrl = work.CoverId is null
                     ? null
                     : $"{_options.CoverBaseUrl.TrimEnd('/')}/{work.CoverId}-M.jpg",
-                Explanation = Explain(work, strategy)
+                Explanation = ranked.Explanation
             };
-
-        private static string Explain(OpenLibraryWork work, RetrievalStrategy strategy)
-        {
-            var found = strategy switch
-            {
-                RetrievalStrategy.TitleAndAuthor => "Found by searching title and author.",
-                RetrievalStrategy.TitleOnly => "Found by searching title.",
-                RetrievalStrategy.AuthorOnly => "Found by searching author.",
-                RetrievalStrategy.Keywords => "Found by keyword search; no title or author was identified.",
-                _ => "Found by a broader keyword search after the title and author search returned nothing."
-            };
-
-            if (work.HasConfirmedPrimaryAuthors)
-            {
-                return $"{found} Primary author confirmed from the Open Library work record.";
-            }
-
-            return work.ContributorNames.Count > 0
-                ? $"{found} Listed names are unconfirmed and may include contributors."
-                : found;
         }
     }
 }

@@ -22,7 +22,19 @@ public sealed class BookSearchResponse
     /// Plain-language reason the deterministic parser was used, suitable for display.
     /// Null when the language model produced the interpretation.
     /// </summary>
-    public string? FallbackReason { get; init; }
+    public string? ExtractionFallbackReason { get; init; }
+
+    /// <summary>
+    /// Whether the ordering and explanations came from the language model or the built-in
+    /// rules. Null when there were no results to order.
+    /// </summary>
+    public RankingSource? RankingSource { get; init; }
+
+    /// <summary>
+    /// Plain-language reason the deterministic ranker was used, suitable for display.
+    /// Null when the language model produced the ranking, or when nothing was ranked.
+    /// </summary>
+    public string? RankingFallbackReason { get; init; }
 
     /// <summary>
     /// Candidates in rank order, best first. Empty when the query was understood but

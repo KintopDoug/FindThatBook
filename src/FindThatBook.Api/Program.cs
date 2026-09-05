@@ -65,6 +65,14 @@ builder.Services.AddHttpClient<ILlmQueryExtractor, GeminiQueryExtractor>((provid
 // Singleton: the retrieval service is scoped, so a per-request cache would never be hit.
 builder.Services.AddSingleton<BookRetrievalCache>();
 builder.Services.AddScoped<IBookRetrievalService, BookRetrievalService>();
+builder.Services.AddTransient<IFallbackBookRanker, FallbackBookRanker>();
+builder.Services.AddScoped<IBookRankingService, BookRankingService>();
+
+builder.Services.AddHttpClient<ILlmBookRanker, GeminiBookRanker>((provider, client) =>
+{
+    var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+    client.BaseAddress = new Uri(options.BaseUrl);
+});
 builder.Services.AddTransient<BookCandidateMapper>();
 
 // Singleton: the rate limit belongs to Open Library, so every concurrent inbound request

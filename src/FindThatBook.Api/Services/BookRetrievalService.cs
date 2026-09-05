@@ -175,12 +175,9 @@ namespace FindThatBook.Api.Services
                     continue;
                 }
 
-                var primaryNames = MatchNames(work, primaryKeys);
-
-                if (primaryNames.Count > 0)
-                {
-                    resolved[index] = With(work, primaryNames);
-                }
+                // Recorded even when nothing matched: "checked, and this name is not a primary
+                // author" is real evidence, and quite different from never having looked.
+                resolved[index] = With(work, MatchNames(work, primaryKeys));
             }
 
             return resolved;
@@ -228,6 +225,7 @@ namespace FindThatBook.Api.Services
                 ContributorNames = work.ContributorNames,
                 ContributorKeys = work.ContributorKeys,
                 PrimaryAuthorNames = primaryAuthorNames,
+                PrimaryAuthorsChecked = true,
                 FirstPublishYear = work.FirstPublishYear,
                 CoverId = work.CoverId,
                 EditionCount = work.EditionCount

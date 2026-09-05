@@ -34,6 +34,17 @@ public sealed class OpenLibraryWork
     /// </summary>
     public IReadOnlyList<string> PrimaryAuthorNames { get; init; } = [];
 
+    /// <summary>
+    /// Whether the canonical work record was actually consulted for this work.
+    /// </summary>
+    /// <remarks>
+    /// Distinguishes "we checked and this name is not a primary author" from "we never
+    /// looked". Only a handful of candidates are checked per search, so without this the two
+    /// are indistinguishable, and an explanation would accuse an unexamined author of being a
+    /// contributor on no evidence at all.
+    /// </remarks>
+    public bool PrimaryAuthorsChecked { get; init; }
+
     public int? FirstPublishYear { get; init; }
 
     /// <summary>Open Library cover id, used to build a cover image URL.</summary>
