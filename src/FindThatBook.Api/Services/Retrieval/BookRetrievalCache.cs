@@ -3,7 +3,7 @@ using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Retrieval
 {
     /// <summary>
     /// Remembers what an interpreted query retrieved, so repeat searches cost no Open Library

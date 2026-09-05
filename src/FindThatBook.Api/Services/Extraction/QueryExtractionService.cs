@@ -3,7 +3,7 @@ using FindThatBook.Api.Exceptions;
 using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Extraction
 {
     /// <summary>
     /// Chooses how a query gets interpreted: the language model when it is configured and

@@ -1,6 +1,6 @@
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Validation;
 using Microsoft.Extensions.Options;
 
 namespace FindThatBook.Api.Tests;

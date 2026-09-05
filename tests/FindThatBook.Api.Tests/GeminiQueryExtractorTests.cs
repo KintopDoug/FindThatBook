@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Extraction;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 

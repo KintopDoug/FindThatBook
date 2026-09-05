@@ -1,6 +1,6 @@
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Models.DTO;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Retrieval;
 using Microsoft.Extensions.Options;
 
 namespace FindThatBook.Api.Tests;

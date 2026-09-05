@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using FindThatBook.Api.Models.DTO;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Extraction
 {
     /// <summary>
     /// Interprets a query using fixed rules instead of a language model.

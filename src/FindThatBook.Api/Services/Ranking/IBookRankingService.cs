@@ -1,6 +1,6 @@
 using FindThatBook.Api.Models.DTO;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Ranking
 {
     public interface IBookRankingService
     {

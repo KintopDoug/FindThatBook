@@ -6,7 +6,7 @@ using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 using Polly;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Extraction
 {
     /// <summary>
     /// Calls Gemini's generateContent endpoint to split a messy query into title, author,

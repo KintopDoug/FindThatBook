@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Retrieval;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 

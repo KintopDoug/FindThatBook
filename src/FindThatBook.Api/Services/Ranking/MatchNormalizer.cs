@@ -2,14 +2,14 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Ranking
 {
     /// <summary>
     /// Folds text for comparison only.
     /// </summary>
     /// <remarks>
     /// This is the counterpart to the ingress normalization in
-    /// <see cref="QueryValidationService"/>, and the two exist for opposite reasons. Ingress
+    /// <see cref="FindThatBook.Api.Services.Validation.QueryValidationService"/>, and the two exist for opposite reasons. Ingress
     /// preserves case, punctuation, and accents because they are evidence for the model and
     /// for Open Library relevance. Here we are asking whether two strings mean the same book,
     /// so all of that has to go: "GARCIA MARQUEZ", "Garcia Marquez", and "Garcia Marquez"

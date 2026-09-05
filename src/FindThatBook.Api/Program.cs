@@ -1,6 +1,11 @@
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Infrastructure;
 using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Extraction;
+using FindThatBook.Api.Services.Mapping;
+using FindThatBook.Api.Services.Ranking;
+using FindThatBook.Api.Services.Retrieval;
+using FindThatBook.Api.Services.Validation;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);

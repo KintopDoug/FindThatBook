@@ -1,5 +1,5 @@
 using FindThatBook.Api.Models.DTO;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Ranking;
 
 namespace FindThatBook.Api.Tests;
 

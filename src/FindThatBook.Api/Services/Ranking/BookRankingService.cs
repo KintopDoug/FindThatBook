@@ -3,14 +3,14 @@ using FindThatBook.Api.Exceptions;
 using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Ranking
 {
     /// <summary>
     /// Chooses how candidates get ordered and explained: the language model when it is
     /// configured and healthy, the deterministic ranker otherwise.
     /// </summary>
     /// <remarks>
-    /// Mirrors <see cref="QueryExtractionService"/> deliberately. Degrading is never silent:
+    /// Mirrors <see cref="FindThatBook.Api.Services.Extraction.QueryExtractionService"/> deliberately. Degrading is never silent:
     /// the chosen path and the reason travel back on the result, because a fallback ranking is
     /// a weaker answer that would otherwise look identical to a good one.
     /// </remarks>

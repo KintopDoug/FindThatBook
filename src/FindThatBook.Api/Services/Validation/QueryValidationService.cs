@@ -4,7 +4,7 @@ using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
 using Microsoft.Extensions.Options;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Validation
 {
     public partial class QueryValidationService(IOptions<SearchOptions> searchOptions) : IQueryValidationService
     {

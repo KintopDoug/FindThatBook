@@ -1,4 +1,9 @@
 using FindThatBook.Api.Models.Response;
+using FindThatBook.Api.Services.Extraction;
+using FindThatBook.Api.Services.Mapping;
+using FindThatBook.Api.Services.Ranking;
+using FindThatBook.Api.Services.Retrieval;
+using FindThatBook.Api.Services.Validation;
 using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Logging;
 namespace FindThatBook.Api.Services;

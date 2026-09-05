@@ -4,7 +4,7 @@ using System.Text.Json;
 using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Exceptions;
 using FindThatBook.Api.Models.DTO;
-using FindThatBook.Api.Services;
+using FindThatBook.Api.Services.Ranking;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 

@@ -5,7 +5,7 @@ using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 using Polly;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Retrieval
 {
     /// <summary>
     /// Thin HTTP wrapper over the Open Library endpoints we use. Knows the wire format and

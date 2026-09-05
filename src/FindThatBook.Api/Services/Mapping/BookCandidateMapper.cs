@@ -2,7 +2,7 @@ using FindThatBook.Api.Configuration;
 using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Mapping
 {
     /// <summary>
     /// Turns ranked works into the candidates the API returns.

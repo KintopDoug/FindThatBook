@@ -6,7 +6,7 @@ using FindThatBook.Api.Models.DTO;
 using Microsoft.Extensions.Options;
 using Polly;
 
-namespace FindThatBook.Api.Services
+namespace FindThatBook.Api.Services.Ranking
 {
     /// <summary>
     /// Asks Gemini to order retrieved candidates and explain each match.
