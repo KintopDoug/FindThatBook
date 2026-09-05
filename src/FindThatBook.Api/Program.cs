@@ -67,6 +67,11 @@ builder.Services.AddSingleton<BookRetrievalCache>();
 builder.Services.AddScoped<IBookRetrievalService, BookRetrievalService>();
 builder.Services.AddTransient<BookCandidateMapper>();
 
+// Singleton: the rate limit belongs to Open Library, so every concurrent inbound request
+// has to draw from the same budget.
+builder.Services.AddSingleton<OpenLibraryRateLimiter>();
+builder.Services.AddTransient<OpenLibraryRateLimitingHandler>();
+
 builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((provider, client) =>
 {
     var options = provider.GetRequiredService<IOptions<OpenLibraryOptions>>().Value;
@@ -74,7 +79,10 @@ builder.Services.AddHttpClient<IOpenLibraryClient, OpenLibraryClient>((provider,
 
     // Open Library throttles anonymous traffic that does not identify itself.
     client.DefaultRequestHeaders.UserAgent.ParseAdd(options.UserAgent);
-});
+})
+// Added after the defaults, so this sits inside the resilience handler and every retry
+// attempt takes its own permit.
+.AddHttpMessageHandler<OpenLibraryRateLimitingHandler>();
 
 var app = builder.Build();
 

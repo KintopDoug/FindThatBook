@@ -53,6 +53,25 @@ public sealed class OpenLibraryOptions
     public int PrimaryAuthorLookups { get; init; }
 
     /// <summary>
+    /// Sustained outbound request rate. Open Library allows one request per second for
+    /// unidentified clients and three for clients that identify themselves in the User-Agent,
+    /// which <see cref="UserAgent"/> does.
+    /// </summary>
+    [Range(1, 10, ErrorMessage = "OpenLibrary:RequestsPerSecond must be configured between 1 and 10.")]
+    public int RequestsPerSecond { get; init; }
+
+    /// <summary>
+    /// How many requests may wait for a slot before we start rejecting.
+    /// </summary>
+    /// <remarks>
+    /// This is a latency budget, not a capacity dial. At the configured rate the last request
+    /// in a full queue waits roughly MaxQueuedRequests / RequestsPerSecond seconds, so a large
+    /// value simply converts a fast rejection into a slow timeout.
+    /// </remarks>
+    [Range(0, 500, ErrorMessage = "OpenLibrary:MaxQueuedRequests must be configured between 0 and 500.")]
+    public int MaxQueuedRequests { get; init; }
+
+    /// <summary>
     /// How long a retrieval stays cached. Long enough to absorb repeated and concurrent
     /// searches for the same book, short enough that catalogue edits show up the same day.
     /// </summary>
