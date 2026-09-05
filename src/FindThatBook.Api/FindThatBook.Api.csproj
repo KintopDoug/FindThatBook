@@ -7,6 +7,8 @@
     <!-- Feeds XML doc comments into the generated OpenAPI document / Swagger UI. -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
+    <!-- Enables `dotnet user-secrets` so the Gemini API key never lands in appsettings.json. -->
+    <UserSecretsId>f578991a-e29d-4727-be85-f90554fec06c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
