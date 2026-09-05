@@ -13,7 +13,7 @@ namespace FindThatBook.Api.Infrastructure;
 /// a 429 completely unpaced, which is precisely when pacing matters most.
 /// </remarks>
 public sealed class OpenLibraryRateLimitingHandler(
-    OpenLibraryRateLimiter rateLimiter,
+    IOpenLibraryRateLimiter rateLimiter,
     ILogger<OpenLibraryRateLimitingHandler> logger) : DelegatingHandler
 {
     protected override async Task<HttpResponseMessage> SendAsync(

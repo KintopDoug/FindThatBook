@@ -12,7 +12,7 @@ namespace FindThatBook.Api.Services
     /// that the text always reflects the evidence that actually decided the ordering rather
     /// than being reconstructed here from different reasoning.
     /// </remarks>
-    public class BookCandidateMapper(IOptions<OpenLibraryOptions> openLibraryOptions)
+    public class BookCandidateMapper(IOptions<OpenLibraryOptions> openLibraryOptions) : IBookCandidateMapper
     {
         private readonly OpenLibraryOptions _options = openLibraryOptions.Value;
 

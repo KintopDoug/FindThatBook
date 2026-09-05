@@ -24,7 +24,7 @@ public class BookRetrievalServiceTests
     private static BookRetrievalService CreateSut(
         IOpenLibraryClient client,
         int primaryAuthorLookups = 5,
-        BookRetrievalCache? cache = null)
+        IBookRetrievalCache? cache = null)
     {
         var options = Microsoft.Extensions.Options.Options.Create(Options(primaryAuthorLookups));
 

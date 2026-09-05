@@ -118,7 +118,7 @@ public class OpenLibraryRateLimitingTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton(Microsoft.Extensions.Options.Options.Create(Options()));
-        services.AddSingleton<OpenLibraryRateLimiter>();
+        services.AddSingleton<IOpenLibraryRateLimiter, OpenLibraryRateLimiter>();
         services.AddTransient<OpenLibraryRateLimitingHandler>();
 
         // Mirrors ServiceDefaults: resilience applied to every client, before per-client handlers.
@@ -130,7 +130,7 @@ public class OpenLibraryRateLimitingTests
 
         var provider = services.BuildServiceProvider();
         var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient("openlibrary");
-        var limiter = provider.GetRequiredService<OpenLibraryRateLimiter>();
+        var limiter = provider.GetRequiredService<IOpenLibraryRateLimiter>();
 
         using var response = await client.GetAsync("search.json");
 

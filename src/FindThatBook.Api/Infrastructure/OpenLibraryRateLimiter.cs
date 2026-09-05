@@ -20,7 +20,7 @@ namespace FindThatBook.Api.Infrastructure;
 /// at the far end, so aiming exactly at the limit would sometimes exceed it.
 /// </para>
 /// </remarks>
-public sealed class OpenLibraryRateLimiter : IDisposable
+public sealed class OpenLibraryRateLimiter : IOpenLibraryRateLimiter, IDisposable
 {
     /// <summary>
     /// Fraction of extra spacing beyond the nominal rate, absorbing jitter between send time

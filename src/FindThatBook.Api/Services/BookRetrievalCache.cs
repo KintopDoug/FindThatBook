@@ -16,7 +16,7 @@ namespace FindThatBook.Api.Services
     /// limit here would otherwise force every other consumer of the shared cache to declare an
     /// entry size.
     /// </remarks>
-    public sealed class BookRetrievalCache : IDisposable
+    public sealed class BookRetrievalCache : IBookRetrievalCache, IDisposable
     {
         private readonly MemoryCache _cache;
         private readonly TimeSpan _lifetime;

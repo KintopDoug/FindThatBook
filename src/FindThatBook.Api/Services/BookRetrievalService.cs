@@ -16,7 +16,7 @@ namespace FindThatBook.Api.Services
     /// </remarks>
     public class BookRetrievalService(
         IOpenLibraryClient openLibraryClient,
-        BookRetrievalCache cache,
+        IBookRetrievalCache cache,
         IOptions<OpenLibraryOptions> openLibraryOptions,
         ILogger<BookRetrievalService> logger) : IBookRetrievalService
     {

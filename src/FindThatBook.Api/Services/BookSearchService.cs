@@ -10,7 +10,7 @@ public class BookSearchService : IBookSearchService
     private readonly IQueryExtractionService _queryExtractionService;
     private readonly IBookRetrievalService _bookRetrievalService;
     private readonly IBookRankingService _bookRankingService;
-    private readonly BookCandidateMapper _bookCandidateMapper;
+    private readonly IBookCandidateMapper _bookCandidateMapper;
 
     public BookSearchService(
         ILogger<BookSearchService> logger,
@@ -18,7 +18,7 @@ public class BookSearchService : IBookSearchService
         IQueryExtractionService queryExtractionService,
         IBookRetrievalService bookRetrievalService,
         IBookRankingService bookRankingService,
-        BookCandidateMapper bookCandidateMapper)
+        IBookCandidateMapper bookCandidateMapper)
     {
         _logger = logger;
         _queryValidationService = queryValidationService;
