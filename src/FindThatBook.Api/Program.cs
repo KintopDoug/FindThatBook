@@ -62,6 +62,8 @@ builder.Services.AddHttpClient<ILlmQueryExtractor, GeminiQueryExtractor>((provid
     client.BaseAddress = new Uri(options.BaseUrl);
 });
 
+// Singleton: the retrieval service is scoped, so a per-request cache would never be hit.
+builder.Services.AddSingleton<BookRetrievalCache>();
 builder.Services.AddScoped<IBookRetrievalService, BookRetrievalService>();
 builder.Services.AddTransient<BookCandidateMapper>();
 

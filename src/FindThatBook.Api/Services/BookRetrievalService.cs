@@ -16,6 +16,7 @@ namespace FindThatBook.Api.Services
     /// </remarks>
     public class BookRetrievalService(
         IOpenLibraryClient openLibraryClient,
+        BookRetrievalCache cache,
         IOptions<OpenLibraryOptions> openLibraryOptions,
         ILogger<BookRetrievalService> logger) : IBookRetrievalService
     {
@@ -30,20 +31,46 @@ namespace FindThatBook.Api.Services
                 return BookRetrievalResult.None;
             }
 
+            // Different users phrase the same request constantly, and one search costs several
+            // Open Library requests against a per-second budget. A hit costs none.
+            if (cache.TryGet(query, out var cached) && cached is not null)
+            {
+                logger.LogInformation(
+                    "Serving {Count} candidates from cache for title={Title} author={Author}.",
+                    cached.Works.Count,
+                    query.Title,
+                    query.Author);
+
+                return cached;
+            }
+
             var (works, strategy) = await SearchAsync(query, cancellationToken);
 
+            // "Nothing found" is cached too. A query with no matches is exactly the one users
+            // retype, and re-asking Open Library cannot produce a different answer within the
+            // cache lifetime.
             if (works.Count == 0)
             {
-                return new BookRetrievalResult { Works = [], Strategy = strategy };
+                return Remember(query, new BookRetrievalResult { Works = [], Strategy = strategy });
             }
 
             var deduplicated = Deduplicate(works);
 
-            return new BookRetrievalResult
+            return Remember(query, new BookRetrievalResult
             {
                 Works = await ResolvePrimaryAuthorsAsync(deduplicated, cancellationToken),
                 Strategy = strategy
-            };
+            });
+        }
+
+        /// <summary>
+        /// Caches a completed retrieval. Only reached on success, so a failed search is never
+        /// cached and the next caller gets a real attempt.
+        /// </summary>
+        private BookRetrievalResult Remember(ExtractedQuery query, BookRetrievalResult result)
+        {
+            cache.Set(query, result);
+            return result;
         }
 
         /// <summary>

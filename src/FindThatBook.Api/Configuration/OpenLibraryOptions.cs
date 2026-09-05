@@ -51,4 +51,18 @@ public sealed class OpenLibraryOptions
     /// </summary>
     [Range(0, 25, ErrorMessage = "OpenLibrary:PrimaryAuthorLookups must be configured between 0 and 25.")]
     public int PrimaryAuthorLookups { get; init; }
+
+    /// <summary>
+    /// How long a retrieval stays cached. Long enough to absorb repeated and concurrent
+    /// searches for the same book, short enough that catalogue edits show up the same day.
+    /// </summary>
+    [Range(1, 1440, ErrorMessage = "OpenLibrary:CacheLifetimeMinutes must be configured between 1 and 1440.")]
+    public int CacheLifetimeMinutes { get; init; }
+
+    /// <summary>
+    /// Ceiling on cached retrievals. Without one the cache grows with the number of distinct
+    /// queries, which is unbounded when the queries come from users.
+    /// </summary>
+    [Range(1, 100_000, ErrorMessage = "OpenLibrary:CacheMaxEntries must be configured between 1 and 100000.")]
+    public int CacheMaxEntries { get; init; }
 }

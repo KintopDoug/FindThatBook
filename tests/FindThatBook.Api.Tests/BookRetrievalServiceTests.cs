@@ -9,18 +9,31 @@ namespace FindThatBook.Api.Tests;
 
 public class BookRetrievalServiceTests
 {
-    private static BookRetrievalService CreateSut(IOpenLibraryClient client, int primaryAuthorLookups = 5) =>
-        new(client,
-            Options.Create(new OpenLibraryOptions
-            {
-                BaseUrl = "https://example.invalid/",
-                CoverBaseUrl = "https://covers.example.invalid/b/id/",
-                UserAgent = "tests",
-                TotalTimeoutSeconds = 5,
-                MaxResults = 10,
-                PrimaryAuthorLookups = primaryAuthorLookups
-            }),
+    private static OpenLibraryOptions Options(int primaryAuthorLookups) => new()
+    {
+        BaseUrl = "https://example.invalid/",
+        CoverBaseUrl = "https://covers.example.invalid/b/id/",
+        UserAgent = "tests",
+        TotalTimeoutSeconds = 5,
+        MaxResults = 10,
+        PrimaryAuthorLookups = primaryAuthorLookups,
+        CacheLifetimeMinutes = 45,
+        CacheMaxEntries = 100
+    };
+
+    private static BookRetrievalService CreateSut(
+        IOpenLibraryClient client,
+        int primaryAuthorLookups = 5,
+        BookRetrievalCache? cache = null)
+    {
+        var options = Microsoft.Extensions.Options.Options.Create(Options(primaryAuthorLookups));
+
+        return new BookRetrievalService(
+            client,
+            cache ?? new BookRetrievalCache(options),
+            options,
             NullLogger<BookRetrievalService>.Instance);
+    }
 
     private static OpenLibraryWork Work(
         string key = "/works/OL1W",
@@ -132,6 +145,85 @@ public class BookRetrievalServiceTests
 
         Assert.Empty(result.Works);
         Assert.Empty(client.Searches);
+    }
+
+    /// <summary>
+    /// The point of the cache: a repeat of the same interpretation must cost no Open Library
+    /// requests at all, since one search spends several against a per-second budget.
+    /// </summary>
+    [Fact]
+    public async Task Repeat_searches_do_not_reach_open_library()
+    {
+        var client = new StubClient([Work()], [Work()]);
+        var cache = new BookRetrievalCache(
+            Microsoft.Extensions.Options.Options.Create(Options(primaryAuthorLookups: 0)));
+
+        var query = new ExtractedQuery { Title = "The Hobbit", Author = "Tolkien" };
+
+        var first = await CreateSut(client, 0, cache).RetrieveAsync(query, CancellationToken.None);
+        Assert.Single(client.Searches);
+
+        // A separate service instance, as a second request would use.
+        var second = await CreateSut(client, 0, cache).RetrieveAsync(
+            new ExtractedQuery { Title = "the hobbit", Author = "tolkien" },
+            CancellationToken.None);
+
+        Assert.Single(client.Searches);                       // still one: nothing new was fetched
+        Assert.Equal(first.Strategy, second.Strategy);
+        Assert.Equal(first.Works.Count, second.Works.Count);
+    }
+
+    /// <summary>
+    /// An empty result is worth caching too: it is exactly the query a user retypes, and
+    /// asking again cannot produce a different answer within the cache lifetime.
+    /// </summary>
+    [Fact]
+    public async Task Repeat_searches_that_found_nothing_also_stay_cached()
+    {
+        var client = new StubClient([], [], []);
+        var cache = new BookRetrievalCache(
+            Microsoft.Extensions.Options.Options.Create(Options(primaryAuthorLookups: 0)));
+
+        var query = new ExtractedQuery { Keywords = ["nothingmatchesthis"] };
+
+        await CreateSut(client, 0, cache).RetrieveAsync(query, CancellationToken.None);
+        var callsAfterFirst = client.Searches.Count;
+
+        await CreateSut(client, 0, cache).RetrieveAsync(query, CancellationToken.None);
+
+        Assert.Equal(callsAfterFirst, client.Searches.Count);
+    }
+
+    /// <summary>A failed search must not be cached, or one outage poisons the next 45 minutes.</summary>
+    [Fact]
+    public async Task Failures_are_not_cached()
+    {
+        var cache = new BookRetrievalCache(
+            Microsoft.Extensions.Options.Options.Create(Options(primaryAuthorLookups: 0)));
+
+        var failing = new ThrowingSearchClient();
+        var query = new ExtractedQuery { Title = "The Hobbit" };
+
+        await Assert.ThrowsAsync<OpenLibraryException>(
+            () => CreateSut(failing, 0, cache).RetrieveAsync(query, CancellationToken.None));
+
+        // The next caller gets a real attempt rather than a cached failure.
+        var recovered = new StubClient([Work()]);
+        var result = await CreateSut(recovered, 0, cache).RetrieveAsync(query, CancellationToken.None);
+
+        Assert.Single(result.Works);
+        Assert.Single(recovered.Searches);
+    }
+
+    private sealed class ThrowingSearchClient : IOpenLibraryClient
+    {
+        public Task<IReadOnlyList<OpenLibraryWork>> SearchWorksAsync(
+            string? title, string? author, string? generalTerms, CancellationToken cancellationToken) =>
+            throw new OpenLibraryException("Open Library returned 503.");
+
+        public Task<IReadOnlyList<string>> GetPrimaryAuthorKeysAsync(
+            string workKey, CancellationToken cancellationToken) =>
+            throw new OpenLibraryException("Open Library returned 503.");
     }
 
     [Fact]
