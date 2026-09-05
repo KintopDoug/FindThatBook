@@ -83,7 +83,101 @@ The model, endpoint, and timeout live in `src/FindThatBook.Api/appsettings.json`
 dotnet test
 ```
 
-89 tests, all unit-level. Nothing in the suite touches the network.
+89 tests. See [Testing strategy](#testing-strategy) for what they cover.
+
+---
+
+## Features completed
+
+**Query handling**
+
+- Sparse queries ("dickens", "tale two cities"), noisy queries ("find me a book about
+  whales"), and mixed title/author phrasing.
+- Ingress normalization: Unicode NFC composition, invisible-character stripping, trimming,
+  whitespace collapsing. Case, punctuation, and accents preserved as evidence.
+- Validation with a configurable length limit, returning a specific reason rather than a
+  generic rejection.
+
+**AI**
+
+- Gemini-backed interpretation of a raw query into title, author, and keywords, using a fixed
+  JSON response schema at `temperature = 0`.
+- Gemini-backed re-ranking of retrieved candidates, with a grounded one-sentence explanation
+  per result.
+- A deterministic fallback for each stage, so the app is fully usable with no API key.
+- The path taken and the reason are reported on every response and surfaced in the UI.
+
+**Open Library**
+
+- Works search across title, author, and general-keyword fields.
+- One widening retry when a field search returns nothing.
+- Canonical work-record lookups to separate primary authors from contributors.
+- De-duplication by work key.
+
+**Ranking**
+
+- Deterministic scoring on title and author evidence, with comparison-time folding for case,
+  accents, punctuation, subtitles, and surnames.
+- Three-state author evidence: confirmed primary author, confirmed contributor-only, and not
+  yet checked — each scored and explained differently.
+- Tie-breaking toward the more widely published and earlier work.
+
+**API**
+
+- .NET 10 Web API with Swagger UI and a typed OpenAPI document.
+- Global exception handling returning RFC 9457 problem documents, mapping upstream failures
+  to `502`/`504` and invalid input to `400`, each with a `traceId`.
+- Options bound from configuration and validated at startup, so a bad value fails fast.
+
+**Production concerns**
+
+- 45-minute in-process result cache keyed on the interpreted query.
+- Shared token-bucket rate limiter keeping outbound traffic within Open Library's 3 req/s
+  allowance, applied inside the retry handler so retries are paced too.
+- OpenTelemetry logs, traces, and metrics via Aspire ServiceDefaults.
+
+**UI**
+
+- React, TypeScript, MUI, MobX. Search box with example queries, loading skeletons, and
+  cancellation of superseded searches.
+- Results showing rank, cover, authors, first publish year, Open Library link, and the
+  explanation behind each match.
+- AI-vs-fallback chips per stage, with a reduced-accuracy disclaimer when either fell back.
+- Error states rendered from the problem document, distinguishing what the user can fix from
+  what they can only retry.
+
+**Orchestration**
+
+- Aspire AppHost running both projects, installing npm packages and waiting for the API to
+  report healthy before starting the UI.
+- The UI resolves the API address through Aspire service discovery rather than configuration.
+
+---
+
+## Testing strategy
+
+89 xUnit tests, all unit-level and offline. External dependencies are replaced with fake
+`HttpMessageHandler`s and hand-written stubs rather than a mocking library, which keeps the
+test doubles readable and the dependency list short.
+
+The suite targets the places where being wrong is either likely or expensive, rather than
+chasing coverage:
+
+| Area | Cases | What it protects |
+| --- | --- | --- |
+| Retrieval, caching, Open Library client | 25 | Search widening; primary-author confirmation; cache hits costing no requests; failures never being cached; resilience rejections mapping to `502` rather than `500` |
+| Deterministic ranking and fallback parsing | 20 | Confirmed authors outranking contributors; comparison folding across case, accents, punctuation, subtitles; keyword-only queries matching author names |
+| Query normalization and validation | 18 | Invisible-only queries counting as content; NFC composition; the length limit applying to real characters, not padding |
+| Gemini clients (extraction and ranking) | 14 | Reading the response envelope; every unusable answer becoming one exception type; keys the model invented being discarded; omitted candidates appended rather than dropped; the API key travelling as a header, never in the URL |
+| Fallback orchestration | 9 | Each degradation path reporting its reason; caller cancellation not being masked as a model failure |
+| Rate limiting | 3 | No 1-second window exceeding the allowance; retries taking their own permit |
+
+Two habits are worth calling out. **Assertions target behaviour, not implementation** — the
+ranking tests assert the resulting order and explanation text, so scoring weights can be
+tuned without rewriting tests. And **tests were mutation-checked**: deliberately breaking the
+cache, the NFC step, and the rate limiter each failed exactly the tests that should have
+failed. That check caught a real defect — a sliding-window limiter that allowed six requests
+in one second against a limit of three, which an average-rate assertion would have missed.
 
 ---
 
