@@ -18,6 +18,15 @@ public static class Extensions
     private const string HealthEndpointPath = "/health";
     private const string AlivenessEndpointPath = "/alive";
 
+    /// <summary>Ceiling on a single outbound HTTP attempt, before the handler retries it.</summary>
+    private static readonly TimeSpan AttemptTimeout = TimeSpan.FromSeconds(20);
+
+    /// <summary>Ceiling on one logical call including every retry.</summary>
+    private static readonly TimeSpan TotalRequestTimeout = TimeSpan.FromSeconds(60);
+
+    /// <summary>Circuit breaker sampling window; Polly requires at least 2x the attempt timeout.</summary>
+    private static readonly TimeSpan SamplingDuration = TimeSpan.FromSeconds(40);
+
     public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         builder.ConfigureOpenTelemetry();
@@ -29,7 +38,22 @@ public static class Extensions
         builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default
-            http.AddStandardResilienceHandler();
+            http.AddStandardResilienceHandler(resilience =>
+            {
+                // The stock 10 second attempt timeout is too short for the upstreams this app
+                // depends on. Open Library was measured serving successful responses at 17-28
+                // seconds while degraded, so a 10 second cutoff discarded work that was about
+                // to succeed and then paid for a retry on top -- the worst of both.
+                resilience.AttemptTimeout.Timeout = AttemptTimeout;
+
+                // Must exceed the attempt timeout, and wide enough to let the retries the
+                // handler is configured for actually happen.
+                resilience.TotalRequestTimeout.Timeout = TotalRequestTimeout;
+
+                // Polly requires the circuit breaker to sample over at least twice the attempt
+                // timeout, and validates it at startup.
+                resilience.CircuitBreaker.SamplingDuration = SamplingDuration;
+            });
 
             // Turn on service discovery by default
             http.AddServiceDiscovery();

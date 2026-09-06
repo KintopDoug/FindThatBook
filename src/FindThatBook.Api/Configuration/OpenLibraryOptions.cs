@@ -33,11 +33,15 @@ public sealed class OpenLibraryOptions
     /// The resilience handler retries inside a single HttpClient call, so this timeout wraps
     /// the whole sequence. Backoff alone costs about ten seconds, and honouring a Retry-After
     /// costs whatever Open Library asks for, so a value that looks generous for one request
-    /// can silently cancel a retry that was about to succeed. It must also stay below the
-    /// handler's own 30 second total, so that a timeout surfaces through our own cancellation
-    /// path rather than as a Polly rejection.
+    /// can silently cancel a retry that was about to succeed.
+    /// <para>
+    /// Two bounds matter. It must exceed the handler's 20 second attempt timeout, or our own
+    /// cancellation kills a slow call that was about to return. And it must stay under the
+    /// handler's 60 second total, so a timeout surfaces through our own cancellation path
+    /// rather than as a Polly rejection. Both are set in ServiceDefaults.
+    /// </para>
     /// </remarks>
-    [Range(1, 29, ErrorMessage = "OpenLibrary:TotalTimeoutSeconds must be configured between 1 and 29.")]
+    [Range(21, 59, ErrorMessage = "OpenLibrary:TotalTimeoutSeconds must be configured between 21 and 59.")]
     public int TotalTimeoutSeconds { get; init; }
 
     /// <summary>How many works to ask the search endpoint for.</summary>

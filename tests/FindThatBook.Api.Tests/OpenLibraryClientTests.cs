@@ -162,6 +162,46 @@ public class OpenLibraryClientTests
         new Polly.CircuitBreaker.BrokenCircuitException("circuit is open")
     ];
 
+    /// <summary>
+    /// Open Library sends explicit nulls and occasionally off-type fields. The
+    /// System.Text.Json accessors throw InvalidOperationException rather than returning
+    /// false for these, so an unguarded read turns a catalogue data quirk into a 500. The
+    /// document is still usable, so the field is simply dropped.
+    /// </summary>
+    [Theory]
+    [InlineData("null cover", "{\"docs\":[{\"key\":\"/works/OL1W\",\"title\":\"T\",\"cover_i\":null}]}")]
+    [InlineData("string year", "{\"docs\":[{\"key\":\"/works/OL1W\",\"title\":\"T\",\"first_publish_year\":\"1937\"}]}")]
+    [InlineData("array editions", "{\"docs\":[{\"key\":\"/works/OL1W\",\"title\":\"T\",\"edition_count\":[1,2]}]}")]
+    public async Task Survives_off_type_numeric_fields(string scenario, string body)
+    {
+        var (sut, _) = CreateSut(HttpStatusCode.OK, body);
+
+        var works = await sut.SearchWorksAsync("anything", null, null, CancellationToken.None);
+
+        var work = Assert.Single(works);
+        Assert.Equal("T", work.Title);
+
+        // The unreadable field is dropped rather than taking the whole result down with it.
+        Assert.True(
+            work.FirstPublishYear is null || work.CoverId is null || work.EditionCount is null,
+            $"expected the off-type field to be dropped for: {scenario}");
+    }
+
+    /// <summary>
+    /// The same hazard on the work record. A non-string author key must not escape as an
+    /// InvalidOperationException, because that bypasses the 502 mapping.
+    /// </summary>
+    [Fact]
+    public async Task Reports_an_off_type_author_key_as_an_open_library_failure()
+    {
+        var (sut, _) = CreateSut(HttpStatusCode.OK, "{\"authors\":[{\"author\":{\"key\":12345}}]}");
+
+        var keys = await sut.GetPrimaryAuthorKeysAsync("/works/OL1W", CancellationToken.None);
+
+        // Nothing confirmable, but no exception: the caller degrades to the listed names.
+        Assert.Empty(keys);
+    }
+
     [Fact]
     public async Task Refuses_a_search_with_no_terms()
     {

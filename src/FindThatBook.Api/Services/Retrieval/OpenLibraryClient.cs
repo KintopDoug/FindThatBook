@@ -76,14 +76,18 @@ namespace FindThatBook.Api.Services.Retrieval
                     .EnumerateArray()
                     .Select(entry => entry.TryGetProperty("author", out var author)
                         && author.TryGetProperty("key", out var key)
+                        && key.ValueKind == JsonValueKind.String
                             ? key.GetString()
                             : null)
                     .Where(key => !string.IsNullOrWhiteSpace(key))
                     .Select(key => NormalizeAuthorKey(key!))
                     .ToArray();
             }
-            catch (JsonException exception)
+            catch (Exception exception) when (exception is JsonException or InvalidOperationException)
             {
+                // InvalidOperationException as well as JsonException: the System.Text.Json
+                // accessors throw it for a well-formed document whose fields are the wrong
+                // type, which is a catalogue data problem rather than a fault of ours.
                 throw new OpenLibraryException($"Work record {workKey} was not readable.", exception);
             }
         }
@@ -156,8 +160,11 @@ namespace FindThatBook.Api.Services.Retrieval
                     .Select(work => work!)
                     .ToArray();
             }
-            catch (JsonException exception)
+            catch (Exception exception) when (exception is JsonException or InvalidOperationException)
             {
+                // See GetPrimaryAuthorKeysAsync: an off-type field throws
+                // InvalidOperationException, not JsonException. Catching only the latter let
+                // a catalogue data problem surface as a 500 instead of a 502.
                 throw new OpenLibraryException("Open Library search response was not readable.", exception);
             }
         }
@@ -196,8 +203,19 @@ namespace FindThatBook.Api.Services.Retrieval
                 ? value.GetString()
                 : null;
 
+        /// <summary>
+        /// Reads an integer field, tolerating anything Open Library actually sends.
+        /// </summary>
+        /// <remarks>
+        /// The ValueKind check is not redundant. TryGetProperty returns true for a property
+        /// that is explicitly null, and TryGetInt32 throws rather than returning false when
+        /// the element is not a number, so a `"cover_i": null` would otherwise escape as an
+        /// InvalidOperationException and surface as a 500.
+        /// </remarks>
         private static int? ReadInt(JsonElement document, string property) =>
-            document.TryGetProperty(property, out var value) && value.TryGetInt32(out var number)
+            document.TryGetProperty(property, out var value)
+            && value.ValueKind == JsonValueKind.Number
+            && value.TryGetInt32(out var number)
                 ? number
                 : null;
 
