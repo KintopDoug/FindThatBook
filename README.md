@@ -97,6 +97,21 @@ project is selected, and the AppHost is the startup project, so it is easy to st
 against it by accident. That still works — the AppHost forwards a `Gemini:ApiKey` it finds to
 the API — but the key then lives in a different secrets file than Option 1 writes to.
 
+#### Option 4 — environment variable
+
+No secrets store involved. Set it in the same shell that launches the AppHost. Note the
+**double** underscore, which is how .NET maps a flat variable onto the nested `Gemini:ApiKey`
+key — a single underscore silently does nothing:
+
+```bash
+# bash
+export Gemini__ApiKey="YOUR_KEY_HERE"
+```
+
+```powershell
+# PowerShell
+$env:Gemini__ApiKey = "YOUR_KEY_HERE"
+```
 
 #### Confirming it worked
 
