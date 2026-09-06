@@ -2,6 +2,7 @@ import { Box, Container, Stack, Typography } from '@mui/material';
 import { observer } from 'mobx-react-lite';
 import { ErrorNotice } from './components/ErrorNotice';
 import { InterpretationPanel } from './components/InterpretationPanel';
+import { RecentSearches } from './components/RecentSearches';
 import { ResultsList } from './components/ResultsList';
 import { SearchBar } from './components/SearchBar';
 import { searchStore } from './stores/SearchStore';
@@ -23,6 +24,8 @@ export const App = observer(() => {
         </Box>
 
         <SearchBar store={store} />
+
+        <RecentSearches store={store} />
 
         <Box component="main" aria-live="polite">
           <Stack spacing={3}>

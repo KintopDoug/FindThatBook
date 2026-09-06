@@ -5,11 +5,31 @@ import { BookSearchService, bookSearchService } from '../services/bookSearchServ
 
 export type SearchStatus = 'idle' | 'searching' | 'done' | 'failed';
 
+/** A completed search, kept so the user can return to it without another API call. */
+export interface HistoryEntry {
+  /** The normalized query the API echoed back. */
+  query: string;
+  response: BookSearchResponse;
+  searchedAt: number;
+}
+
+/** How many past searches stay available. Small on purpose: this is a way back, not an archive. */
+const MAX_HISTORY = 5;
+
 export class SearchStore {
   query = '';
   status: SearchStatus = 'idle';
   response: BookSearchResponse | null = null;
   error: ApiError | null = null;
+
+  /** Completed searches from this session, newest first. */
+  history: HistoryEntry[] = [];
+
+  /**
+   * True while the displayed response came from history rather than a fresh call. Shown in
+   * the UI so a replayed answer is never mistaken for a new one.
+   */
+  viewingFromHistory = false;
 
   /** Cancels the in-flight search when a newer one starts. */
   private inFlight: AbortController | null = null;
@@ -82,6 +102,7 @@ export class SearchStore {
       this.query = target;
       this.status = 'searching';
       this.error = null;
+      this.viewingFromHistory = false;
     });
 
     try {
@@ -90,6 +111,7 @@ export class SearchStore {
       runInAction(() => {
         this.response = response;
         this.status = 'done';
+        this.remember(response);
       });
     } catch (error) {
       // A superseded search is not a failure: a newer one is already running, and showing
@@ -116,6 +138,46 @@ export class SearchStore {
     }
   }
 
+  /**
+   * Records a completed search, newest first, replacing any earlier entry for the same
+   * query so revisiting one does not push the others out.
+   */
+  private remember(response: BookSearchResponse) {
+    const key = response.query.toLowerCase();
+
+    this.history = [
+      { query: response.query, response, searchedAt: Date.now() },
+      ...this.history.filter((entry) => entry.query.toLowerCase() !== key),
+    ].slice(0, MAX_HISTORY);
+  }
+
+  /**
+   * Shows a past result immediately, with no API call.
+   *
+   * Any in-flight search is abandoned first: the user has asked for something else, and a
+   * late response would otherwise overwrite what they just chose to look at.
+   */
+  showFromHistory(entry: HistoryEntry) {
+    this.inFlight?.abort();
+    this.inFlight = null;
+
+    this.query = entry.query;
+    this.response = entry.response;
+    this.error = null;
+    this.status = 'done';
+    this.viewingFromHistory = true;
+  }
+
+  /** True when this entry is the one currently on screen. */
+  isShowing(entry: HistoryEntry): boolean {
+    return this.viewingFromHistory && this.response === entry.response;
+  }
+
+  clearHistory() {
+    this.history = [];
+    this.viewingFromHistory = false;
+  }
+
   reset() {
     this.inFlight?.abort();
     this.inFlight = null;
@@ -123,6 +185,8 @@ export class SearchStore {
     this.status = 'idle';
     this.response = null;
     this.error = null;
+    this.history = [];
+    this.viewingFromHistory = false;
   }
 }
 
