@@ -40,9 +40,24 @@ public sealed class BookRankingResult
     /// </summary>
     public string? FallbackReason { get; init; }
 
+    /// <summary>
+    /// True when the model was configured but could not be reached. See
+    /// <see cref="QueryExtractionResult.AiUnavailable"/>.
+    /// </summary>
+    public bool AiUnavailable { get; init; }
+
     public static BookRankingResult FromLlm(IReadOnlyList<RankedWork> ranked) =>
         new() { Ranked = ranked, Source = RankingSource.Llm };
 
-    public static BookRankingResult FromFallback(IReadOnlyList<RankedWork> ranked, string reason) =>
-        new() { Ranked = ranked, Source = RankingSource.Fallback, FallbackReason = reason };
+    public static BookRankingResult FromFallback(
+        IReadOnlyList<RankedWork> ranked,
+        string reason,
+        bool aiUnavailable = false) =>
+        new()
+        {
+            Ranked = ranked,
+            Source = RankingSource.Fallback,
+            FallbackReason = reason,
+            AiUnavailable = aiUnavailable
+        };
 }

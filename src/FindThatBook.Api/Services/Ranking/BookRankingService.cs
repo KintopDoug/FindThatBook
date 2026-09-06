@@ -69,6 +69,9 @@ namespace FindThatBook.Api.Services.Ranking
             ExtractedQuery query,
             IReadOnlyList<OpenLibraryWork> works,
             string reason) =>
-            BookRankingResult.FromFallback(fallbackBookRanker.Rank(query, works), reason);
+            BookRankingResult.FromFallback(
+                fallbackBookRanker.Rank(query, works),
+                reason,
+                aiUnavailable: reason == UnavailableReason);
     }
 }

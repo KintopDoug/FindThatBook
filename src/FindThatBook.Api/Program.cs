@@ -54,6 +54,9 @@ builder.Services.AddOpenApi(options =>
     });
 });
 
+// Singleton: BookSearchService is scoped, so a per-request cache would never be hit. This
+// one fronts the whole pipeline, so a repeat query costs no model call at all.
+builder.Services.AddSingleton<ISearchResponseCache, SearchResponseCache>();
 builder.Services.AddScoped<IBookSearchService, BookSearchService>();
 builder.Services.AddTransient<IQueryValidationService, QueryValidationService>();
 builder.Services.AddTransient<IFallbackQueryExtractor, FallbackQueryExtractor>();

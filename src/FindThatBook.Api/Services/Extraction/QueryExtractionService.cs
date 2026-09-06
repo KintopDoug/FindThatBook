@@ -74,6 +74,11 @@ namespace FindThatBook.Api.Services.Extraction
         }
 
         private QueryExtractionResult Fallback(string query, string reason) =>
-            QueryExtractionResult.FromFallback(fallbackQueryExtractor.Extract(query), reason);
+            QueryExtractionResult.FromFallback(
+                fallbackQueryExtractor.Extract(query),
+                reason,
+                // "Unavailable" is temporary; "not configured" is the steady state. Only the
+                // former makes the result unsafe to cache.
+                aiUnavailable: reason == UnavailableReason);
     }
 }
