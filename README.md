@@ -52,27 +52,74 @@ bookmarking a port.
 
 **The app runs without a key.** Both AI stages fall back to deterministic rules, and the UI reports to the user when the fallback is used. Configure a key to enable the AI path.
 
-Get one for gemini from [Google AI Studio](https://aistudio.google.com/apikey), then store it in user
-secrets so it never reaches source control:
+Get a key from [Google AI Studio](https://aistudio.google.com/apikey), then store it in user
+secrets so it never reaches source control.
+
+#### Option 1 — from the repository root (recommended)
+
+The directory matters. Run this from `DougKintop_2026_Developer_Project_Submission`, the
+folder containing `FindThatBook.slnx`:
 
 ```bash
 dotnet user-secrets set "Gemini:ApiKey" "YOUR_KEY_HERE" --project src/FindThatBook.Api
 ```
 
-Or set an environment variable instead:
+Expected output:
+
+```
+Successfully saved Gemini:ApiKey to the secret store.
+```
+
+> **`Could not find a MSBuild project file`** means `--project` was omitted. The repository
+> root holds a solution, not a project, so `dotnet user-secrets` cannot infer a target there.
+
+#### Option 2 — from inside the API project folder
+
+`cd` into the project first, and then `--project` is unnecessary:
 
 ```bash
-# bash
-export Gemini__ApiKey="YOUR_KEY_HERE"
+cd src/FindThatBook.Api
+dotnet user-secrets set "Gemini:ApiKey" "YOUR_KEY_HERE"
 ```
 
-```powershell
-# PowerShell
-$env:Gemini__ApiKey = "YOUR_KEY_HERE"
+#### Option 3 — Visual Studio
+
+Right-click **FindThatBook.Api** in Solution Explorer → **Manage User Secrets**. Add:
+
+```json
+{
+  "Gemini:ApiKey": "YOUR_KEY_HERE"
+}
 ```
 
-Restart the AppHost. The chips in the UI flip from **Built-in rules** to **AI**, and the
-reduced-accuracy disclaimer disappears.
+Right-clicking the wrong project is the usual mistake here: the menu item acts on whichever
+project is selected, and the AppHost is the startup project, so it is easy to store the key
+against it by accident. That still works — the AppHost forwards a `Gemini:ApiKey` it finds to
+the API — but the key then lives in a different secrets file than Option 1 writes to.
+
+
+#### Confirming it worked
+
+From the repository root:
+
+```bash
+dotnet user-secrets list --project src/FindThatBook.Api
+```
+
+Secrets are stored outside the repository, at
+`%APPDATA%\Microsoft\UserSecrets\<UserSecretsId>\secrets.json` on Windows
+(`~/.microsoft/usersecrets/<UserSecretsId>/secrets.json` on macOS and Linux), where
+`UserSecretsId` is the value in `src/FindThatBook.Api/FindThatBook.Api.csproj`.
+
+Restart the AppHost, then run any search. The response itself tells you which state you are
+in — the UI chips read **AI** rather than **Built-in rules**, and if a fallback did occur the
+reason distinguishes the two failure modes:
+
+| Reason shown | Meaning |
+| --- | --- |
+| "AI interpretation is **not configured**" | No key was found. It is in the wrong place, or the AppHost was not restarted. |
+| "AI interpretation was **unavailable**" | The key was found and Gemini was called, but the call failed — usually an invalid or unauthorised key. |
+| No disclaimer at all | Working. |
 
 The model, endpoint, and timeout live in `src/FindThatBook.Api/appsettings.json` under
 `Gemini`. Only the key is secret.

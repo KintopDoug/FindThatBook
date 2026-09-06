@@ -186,9 +186,30 @@ namespace FindThatBook.Api.Services.Extraction
             };
         }
 
-        /// <summary>Models sometimes return empty strings where the instruction said to omit.</summary>
-        private static string? Clean(string? value) =>
-            string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        /// <summary>
+        /// Normalizes a single extracted field.
+        /// </summary>
+        /// <remarks>
+        /// Models sometimes return an empty string where the instruction said to omit the
+        /// field, and under load one has been observed packing several labelled fields into
+        /// one value, a title followed by a newline and then "author: ...". Only the first
+        /// is kept, so a malformed answer degrades to a usable title rather than poisoning
+        /// the Open Library query with a label and a newline.
+        /// </remarks>
+        private static string? Clean(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            var firstLine = value
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .FirstOrDefault(line => !string.IsNullOrWhiteSpace(line))
+                ?.Trim();
+
+            return string.IsNullOrWhiteSpace(firstLine) ? null : firstLine;
+        }
 
         private static string Truncate(string value) =>
             value.Length <= 500 ? value : value[..500] + "...";

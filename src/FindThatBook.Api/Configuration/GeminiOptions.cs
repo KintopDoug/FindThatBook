@@ -26,8 +26,18 @@ public sealed class GeminiOptions
     [Required(AllowEmptyStrings = false, ErrorMessage = "Gemini:BaseUrl must be configured.")]
     public string BaseUrl { get; init; } = string.Empty;
 
-    /// <summary>Per-request timeout for the extraction call.</summary>
-    [Range(1, 120, ErrorMessage = "Gemini:TimeoutSeconds must be configured between 1 and 120.")]
+    /// <summary>
+    /// Budget for one logical model call, covering every retry attempt rather than each one.
+    /// </summary>
+    /// <remarks>
+    /// Same bounds as OpenLibrary:TotalTimeoutSeconds, and for the same reasons. It must
+    /// exceed the resilience handler's 20 second attempt timeout, or a single slow attempt
+    /// consumes the whole budget and our own cancellation kills the retry that would have
+    /// succeeded -- which is exactly what a transient 503 from Gemini produces. It must stay
+    /// under the handler's 60 second total so a timeout surfaces through our cancellation
+    /// path. Both are set in ServiceDefaults.
+    /// </remarks>
+    [Range(21, 59, ErrorMessage = "Gemini:TimeoutSeconds must be configured between 21 and 59.")]
     public int TimeoutSeconds { get; init; }
 
     /// <summary>True when an API key is present and the model can actually be called.</summary>

@@ -74,6 +74,23 @@ public class GeminiQueryExtractorTests
             () => sut.ExtractAsync("anything", CancellationToken.None));
     }
 
+    /// <summary>
+    /// Observed in the wild while the model was under load: several labelled fields packed
+    /// into one value. Keeping only the first line stops a label and a newline from reaching
+    /// the Open Library query.
+    /// </summary>
+    [Fact]
+    public async Task Keeps_only_the_first_line_of_a_field()
+    {
+        var (sut, _) = CreateSut(
+            HttpStatusCode.OK,
+            Envelope("{\"title\":\"A Tale of Two Cities\\nauthor: Charles Dickens\",\"keywords\":[]}"));
+
+        var result = await sut.ExtractAsync("tale of two cities by dickens", CancellationToken.None);
+
+        Assert.Equal("A Tale of Two Cities", result.Title);
+    }
+
     [Fact]
     public async Task Reports_model_content_that_is_not_json_as_a_failure()
     {
